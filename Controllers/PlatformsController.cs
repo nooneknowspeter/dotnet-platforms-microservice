@@ -2,6 +2,7 @@ using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using PlatformService.Data;
 using PlatformService.Dtos;
+using PlatformService.Models;
 
 namespace PlatformService.Controllers
 {
@@ -48,6 +49,28 @@ namespace PlatformService.Controllers
             }
 
             return NotFound();
+        }
+
+        // creates platform through DTO and adds to model
+        [HttpPost]
+        public ActionResult<PlatformReadDto> CreatePlatform(PlatformCreateDto platformCreateDto)
+        {
+            // linking adapter to pass in DTO to model using AutoMapper; mapper dependency
+            var platformModel = _mapper.Map<Platform>(platformCreateDto);
+
+            _repository.CreatePlatform(platformModel);
+
+            _repository.SaveChanges();
+
+            var platformReadDto = _mapper.Map<PlatformReadDto>(platformModel);
+
+            // returns URI / URL of newly created platform in model / database
+            return CreatedAtRoute(
+                // name of action
+                nameof(GetPlatformById),
+                new { Id = platformReadDto.Id },
+                platformReadDto
+            );
         }
     }
 }
