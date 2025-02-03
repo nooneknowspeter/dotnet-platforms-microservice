@@ -5,8 +5,7 @@ namespace PlatformService.Models
   // internal representation of data
   public class Platform
   {
-    // primary keys for data
-    [Key]
+    [Key] // primary key; Id
     [Required]
     public int Id { get; set; }
 
