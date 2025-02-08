@@ -1,0 +1,21 @@
+---
+name: Docker Image CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the Docker image
+        run: docker build -t peter6/dotnet-platform-service:latest .
+      - name: Docker Auth
+        run: docker login -u peter6 -p ${{secrets.DOCKER_K8S_DOTNET_PAT}} \
+      - name: Push to Docker Hub
+        run: docker push peter6/dotnet-platform-service:latest
