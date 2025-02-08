@@ -2,7 +2,6 @@ using System.ComponentModel.DataAnnotations;
 
 namespace PlatformService.Dtos
 {
-
   public class PlatformCreateDto
   {
     // prevent user to provide id when creating platform
@@ -16,5 +15,4 @@ namespace PlatformService.Dtos
     [Required]
     public string Cost { get; set; }
   }
-
 }
