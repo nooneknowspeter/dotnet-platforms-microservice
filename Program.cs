@@ -31,7 +31,7 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 builder.Services.AddHttpClient<ICommandDataClient, HttpCommandDataClient>();
 
 //configure AppDbContext
-if (!isProductionSource)
+if (isProductionSource)
 {
     Console.WriteLine("Using Database");
 
