@@ -11,15 +11,15 @@ namespace PlatformService.Data
   public static class PrepDb
   {
     // function to prepare data on application startup
-    public static void PrepPopulation(IApplicationBuilder app)
+    public static void PrepPopulation(IApplicationBuilder app, bool isProduction)
     {
       using (var serviceScope = app.ApplicationServices.CreateScope())
       {
-        SeedData(serviceScope.ServiceProvider.GetService<AppDbContext>());
+        SeedData(serviceScope.ServiceProvider.GetService<AppDbContext>(), isProduction);
       }
     }
 
-    private static void SeedData(AppDbContext context)
+    private static void SeedData(AppDbContext context, bool isProduction)
     {
       if (!context.Platforms.Any())
       {
