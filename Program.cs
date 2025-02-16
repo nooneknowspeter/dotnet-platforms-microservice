@@ -1,3 +1,4 @@
+using System.Configuration;
 using Microsoft.EntityFrameworkCore;
 using PlatformService.Data;
 using PlatformService.SyncDataService.Http;
@@ -7,6 +8,10 @@ var builder = WebApplication.CreateBuilder(args);
 // environment variables pre-build
 var isDevelopmentSource = builder.Environment.IsDevelopment();
 var isProductionSource = builder.Environment.IsProduction();
+
+// determine environment
+var isProduction = false;
+
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at
 // https://aka.ms/aspnetcore/swashbuckle
@@ -17,14 +22,6 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// configure AppDbContext
-builder.Services.AddDbContext<AppDbContext>(
-    // using inMemory / caching during development for quick interaction and testing
-    // connect db for production to save state
-    option =>
-    option.UseInMemoryDatabase("InMem")
-);
-
 // map concrete type from interface to PlatformRepo class; dependency injection
 builder.Services.AddScoped<IPlatformRepo, PlatformRepo>();
 
@@ -33,16 +30,35 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddHttpClient<ICommandDataClient, HttpCommandDataClient>();
 
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+//configure AppDbContext
+if (!isProductionSource)
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    Console.WriteLine("Using Database");
+
+    builder.Services.AddDbContext<AppDbContext>(option =>
+        option.UseSqlServer(builder.Configuration.GetConnectionString("PlatformsConnection"))
+    );
+
+    isProduction = true;
+}
+else
+{
+    Console.WriteLine("Using RAM");
+
+    builder.Services.AddDbContext<AppDbContext>(
+        // using inMemory / caching during development for quick interaction and testing
+        // connect db for production to save state
+        option =>
+        option.UseInMemoryDatabase("InMem")
+    );
+
+    isProduction = false;
 }
 
-PrepDb.PrepPopulation(app);
+var app = builder.Build();
+
+// setup PrepDb class to apply migration during production
+PrepDb.PrepPopulation(app, isProduction);
 
 app.UseHttpsRedirection();
 
