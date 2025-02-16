@@ -4,6 +4,9 @@ using PlatformService.SyncDataService.Http;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// environment variables pre-build
+var isDevelopmentSource = builder.Environment.IsDevelopment();
+var isProductionSource = builder.Environment.IsProduction();
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at
 // https://aka.ms/aspnetcore/swashbuckle
