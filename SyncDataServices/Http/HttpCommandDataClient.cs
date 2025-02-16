@@ -7,15 +7,18 @@ using PlatformService.Dtos;
 
 namespace PlatformService.SyncDataService.Http
 {
+
   public class HttpCommandDataClient : ICommandDataClient
   {
 
     private readonly HttpClient _httpClient;
+    private readonly IConfiguration _configuration;
 
     // httpClient injected into constructor when called
-    public HttpCommandDataClient(HttpClient httpClient)
+    public HttpCommandDataClient(HttpClient httpClient, IConfiguration configuration)
     {
       _httpClient = httpClient;
+      _configuration = configuration;
     }
 
     // implement async call to bus
@@ -31,7 +34,7 @@ namespace PlatformService.SyncDataService.Http
                       "application/json");
 
 
-      var response = await _httpClient.PostAsync("http://localhost:5108/api/commands/platforms", httpContent);
+      var response = await _httpClient.PostAsync($"{_configuration["CommandService"]}", httpContent);
 
       if (response.IsSuccessStatusCode)
       {
