@@ -10,9 +10,9 @@ namespace PlatformService.Profiles
     public PlatformsProfile()
     {
       // maps source data to target data
-      // maps platform target to read DTO and provides data to end user
       CreateMap<Platform, PlatformReadDto>();
       CreateMap<PlatformCreateDto, Platform>();
+      CreateMap<PlatformReadDto, PlatformPublishedDto>();
     }
   }
 }
