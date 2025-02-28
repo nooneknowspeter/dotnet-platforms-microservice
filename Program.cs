@@ -1,5 +1,6 @@
 using System.Configuration;
 using Microsoft.EntityFrameworkCore;
+using PlatformService.AsyncDataServices;
 using PlatformService.Data;
 using PlatformService.SyncDataService.Http;
 
@@ -30,29 +31,32 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 builder.Services.AddHttpClient<ICommandDataClient, HttpCommandDataClient>();
 
+// configure asynchronous messaging
+builder.Services.AddSingleton<IMessageBusClient, MessageBusClient>();
+
 //configure AppDbContext
 if (isProductionSource)
 {
-    Console.WriteLine("Using Database");
+  Console.WriteLine("Using Database");
 
-    builder.Services.AddDbContext<AppDbContext>(option =>
-        option.UseSqlServer(builder.Configuration.GetConnectionString("PlatformsConnection"))
-    );
+  builder.Services.AddDbContext<AppDbContext>(option =>
+      option.UseSqlServer(builder.Configuration.GetConnectionString("PlatformsConnection"))
+  );
 
-    isProduction = true;
+  isProduction = true;
 }
 else
 {
-    Console.WriteLine("Using RAM");
+  Console.WriteLine("Using RAM");
 
-    builder.Services.AddDbContext<AppDbContext>(
-        // using inMemory / caching during development for quick interaction and testing
-        // connect db for production to save state
-        option =>
-        option.UseInMemoryDatabase("InMem")
-    );
+  builder.Services.AddDbContext<AppDbContext>(
+      // using inMemory / caching during development for quick interaction and testing
+      // connect db for production to save state
+      option =>
+      option.UseInMemoryDatabase("InMem")
+  );
 
-    isProduction = false;
+  isProduction = false;
 }
 
 var app = builder.Build();
@@ -84,15 +88,15 @@ app.MapGet(
         "/weatherforecast",
         () =>
         {
-            var forecast = Enumerable
-                .Range(1, 5)
-                .Select(index => new WeatherForecast(
-                    DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                    Random.Shared.Next(-20, 55),
-                    summaries[Random.Shared.Next(summaries.Length)]
-                ))
-                .ToArray();
-            return forecast;
+          var forecast = Enumerable
+              .Range(1, 5)
+              .Select(index => new WeatherForecast(
+                  DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
+                  Random.Shared.Next(-20, 55),
+                  summaries[Random.Shared.Next(summaries.Length)]
+              ))
+              .ToArray();
+          return forecast;
         }
     )
     .WithName("GetWeatherForecast")
@@ -102,5 +106,5 @@ app.Run();
 
 record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
+  public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
