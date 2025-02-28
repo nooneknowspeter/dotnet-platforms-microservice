@@ -1,5 +1,6 @@
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using PlatformService.AsyncDataServices;
 using PlatformService.Data;
 using PlatformService.Dtos;
 using PlatformService.Models;
@@ -17,16 +18,22 @@ namespace PlatformService.Controllers
     private readonly IPlatformRepo _repository;
     private readonly IMapper _mapper;
     private readonly ICommandDataClient _commandDataClient;
+    private readonly IMessageBusClient _messageBusClient;
+    private readonly IConfiguration _configuration;
 
     public PlatformsController(
-    IPlatformRepo repository,
-    IMapper mapper,
-    ICommandDataClient commandDataClient
-    )
+        IPlatformRepo repository,
+        IMapper mapper,
+        ICommandDataClient commandDataClient,
+        IMessageBusClient messageBusClient,
+        IConfiguration configuration
+        )
     {
       _repository = repository;
       _mapper = mapper;
       _commandDataClient = commandDataClient;
+      _messageBusClient = messageBusClient;
+      _configuration = configuration;
     }
 
     // returns enmuration of PlatformReadDTO when the api endpoint
@@ -72,14 +79,26 @@ namespace PlatformService.Controllers
 
       var platformReadDto = _mapper.Map<PlatformReadDto>(platformModel);
 
+      // send sync message
       try
       {
         await _commandDataClient.SendPlatformToCommand(platformReadDto);
       }
-      catch (Exception ex)
+      catch (Exception exception)
       {
+        Console.WriteLine($"Sync Failed: {exception.Message}");
+      }
 
-        Console.WriteLine($"Failed: {ex.Message}");
+      // send async message
+      try
+      {
+        var platformPublishedDto = _mapper.Map<PlatformPublishedDto>(platformReadDto);
+        platformPublishedDto.Event = "Platform_Published";
+        _messageBusClient.PublishNewPlatform(platformPublishedDto, _configuration);
+      }
+      catch (Exception exception)
+      {
+        Console.WriteLine($"Async Failed: {exception.Message}");
       }
 
       // returns URI / URL of newly created platform in model / database
