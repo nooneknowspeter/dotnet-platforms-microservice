@@ -37,25 +37,41 @@ builder.Services.AddSingleton<IMessageBusClient, MessageBusClient>();
 //configure AppDbContext
 if (isProductionSource)
 {
-  Console.WriteLine("Using Database");
+  // database setup
+  // 
+  //-------------------------------------------------------------------------------------
+  Console.WriteLine("--> Using Database");
 
   builder.Services.AddDbContext<AppDbContext>(option =>
       option.UseSqlServer(builder.Configuration.GetConnectionString("PlatformsConnection"))
   );
 
+
+  // set production to true
+  // builds application for production
+  // 
+  //-------------------------------------------------------------------------------------
   isProduction = true;
 }
 else
 {
-  Console.WriteLine("Using RAM");
+  Console.WriteLine("--> Using RAM");
 
   builder.Services.AddDbContext<AppDbContext>(
+      // database setup
       // using inMemory / caching during development for quick interaction and testing
       // connect db for production to save state
+      // 
+      //-------------------------------------------------------------------------------------
       option =>
       option.UseInMemoryDatabase("InMem")
   );
 
+
+  // set production to false
+  // builds application for development
+  // 
+  //-------------------------------------------------------------------------------------
   isProduction = false;
 }
 
