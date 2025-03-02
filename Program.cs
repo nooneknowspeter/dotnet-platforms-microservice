@@ -1,6 +1,10 @@
 using System.Configuration;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Logs;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Trace;
 using PlatformService.AsyncDataServices;
 using PlatformService.Data;
 using PlatformService.SyncDataService.Http;
@@ -38,6 +42,9 @@ builder.Services.AddSingleton<IMessageBusClient, MessageBusClient>();
 
 // configure gRPC
 builder.Services.AddGrpc();
+
+const string serviceName = "PlatformService";
+
 //configure AppDbContext
 if (isProductionSource)
 {
@@ -50,6 +57,40 @@ if (isProductionSource)
       option.UseSqlServer(builder.Configuration.GetConnectionString("PlatformsConnection"))
   );
 
+  // opentelemetry setup
+  // uses HTTP, protobuf --> http://lgtm-clusterip-service:4318
+  // 
+  //-------------------------------------------------------------------------------------
+  Console.WriteLine("S --> Configuring OpenTelemetry");
+
+  var openTelemetryURI = builder.Configuration.GetConnectionString("OpenTelemetryHTTP");
+  Console.WriteLine($"OpenTelemetry Endpoint --> {openTelemetryURI}");
+
+  builder.Services.AddOpenTelemetry()
+      .WithTracing(tracing => tracing
+          // The rest of your setup code goes here
+          .AddOtlpExporter(options =>
+          {
+            options.Endpoint = new Uri(openTelemetryURI + "/v1/traces");
+            options.Protocol = OtlpExportProtocol.HttpProtobuf;
+          }))
+      .WithMetrics(metrics => metrics
+          // The rest of your setup code goes here
+          .AddOtlpExporter(options =>
+          {
+            options.Endpoint = new Uri(openTelemetryURI + "/v1/metrics");
+            options.Protocol = OtlpExportProtocol.HttpProtobuf;
+          }));
+
+  builder.Logging.AddOpenTelemetry(logging =>
+  {
+    // The rest of your setup code goes here
+    logging.AddOtlpExporter(options =>
+    {
+      options.Endpoint = new Uri(openTelemetryURI + "/v1/logs");
+      options.Protocol = OtlpExportProtocol.HttpProtobuf;
+    });
+  });
 
   // set production to true
   // builds application for production
@@ -71,6 +112,41 @@ else
       option.UseInMemoryDatabase("InMem")
   );
 
+  // opentelemetry setup
+  // uses HTTP, protobuf --> http://localhost:4318
+  // 
+  //-------------------------------------------------------------------------------------
+  Console.WriteLine("S --> Configuring OpenTelemetry");
+
+  var openTelemetryURI = builder.Configuration.GetConnectionString("OpenTelemetryHTTP");
+  Console.WriteLine($"OpenTelemetry Endpoint --> {openTelemetryURI}");
+
+  builder.Services.AddOpenTelemetry()
+      .WithTracing(tracing => tracing
+          // the rest of your setup code goes here
+          .AddOtlpExporter(options =>
+          {
+            options.Endpoint = new Uri(openTelemetryURI);
+            options.Protocol = OtlpExportProtocol.HttpProtobuf;
+          }))
+      .WithMetrics(metrics => metrics
+          // the rest of your setup code goes here
+          .AddOtlpExporter(options =>
+          {
+            options.Endpoint = new Uri(openTelemetryURI);
+            options.Protocol = OtlpExportProtocol.HttpProtobuf;
+          })
+          );
+
+  builder.Logging.AddOpenTelemetry(logging =>
+  {
+    // The rest of your setup code goes here
+    logging.AddOtlpExporter(options =>
+    {
+      options.Endpoint = new Uri(openTelemetryURI);
+      options.Protocol = OtlpExportProtocol.HttpProtobuf;
+    });
+  });
 
   // set production to false
   // builds application for development
