@@ -1,8 +1,10 @@
 using System.Configuration;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using PlatformService.AsyncDataServices;
 using PlatformService.Data;
 using PlatformService.SyncDataService.Http;
+using PlatformService.SyncDataServices.Grpc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,6 +36,8 @@ builder.Services.AddHttpClient<ICommandDataClient, HttpCommandDataClient>();
 // configure asynchronous messaging
 builder.Services.AddSingleton<IMessageBusClient, MessageBusClient>();
 
+// configure gRPC
+builder.Services.AddGrpc();
 //configure AppDbContext
 if (isProductionSource)
 {
@@ -84,6 +88,15 @@ app.UseHttpsRedirection();
 
 // map controllers to endpoints
 app.MapControllers();
+
+// map gRPC endpoints
+app.MapGrpcService<GrpcPlatformService>();
+
+// endpoint to serve gRPC contract
+app.MapGet("/protos/platforms.proto", async context =>
+{
+  await context.Response.WriteAsync(File.ReadAllText("Protos/platforms.proto"));
+});
 
 var summaries = new[]
 {
