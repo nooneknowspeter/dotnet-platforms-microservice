@@ -45,6 +45,9 @@ builder.Services.AddGrpc();
 
 const string serviceName = "PlatformService";
 
+// enable CORS
+builder.Services.AddCors();
+
 //configure AppDbContext
 if (isProductionSource)
 {
@@ -148,6 +151,7 @@ else
     });
   });
 
+
   // set production to false
   // builds application for development
   // 
@@ -155,10 +159,21 @@ else
   isProduction = false;
 }
 
+
 var app = builder.Build();
 
 // setup PrepDb class to apply migration during production
 PrepDb.PrepPopulation(app, isProduction);
+
+// setup CORS
+if (isProduction)
+{
+  app.UseCors(options => options.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithOrigins("http://frontend-clusterip-service:3000"));
+}
+else
+{
+  app.UseCors(options => options.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().WithOrigins("http://localhost:5173"));
+}
 
 app.UseHttpsRedirection();
 
